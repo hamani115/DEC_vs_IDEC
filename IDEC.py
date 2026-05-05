@@ -187,14 +187,14 @@ if __name__ == "__main__":
 
     # load dataset
     # optimizer = SGD(lr=0.1, momentum=0.99)
-    optimizer = SGD(learning_rate=0.01, momentum=0.99)
+    optimizer = SGD(learning_rate=0.01, momentum=0.9)
     from datasets import load_mnist, load_reuters, load_usps, load_cifar10
 
     if args.dataset == 'mnist':  # recommends: n_clusters=10, update_interval=140
         x, y = load_mnist()
     elif args.dataset == 'cifar10': # recommends: n_clusters=10
         x, y = load_cifar10()
-        optimizer = 'adam'
+        # optimizer = 'adam'
     elif args.dataset == 'usps':  # recommends: n_clusters=10, update_interval=30
         x, y = load_usps('data/usps')
     elif args.dataset == 'reutersidf10k':  # recommends: n_clusters=4, update_interval=3
