@@ -19,7 +19,7 @@ from time import time
 import numpy as np
 from tensorflow.keras.models import Model
 from tensorflow.keras.optimizers import SGD
-from tensorflow.keras.utils.vis_utils import plot_model
+from tensorflow.keras.utils import plot_model
 
 from sklearn.cluster import KMeans
 from sklearn import metrics
