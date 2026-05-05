@@ -135,17 +135,20 @@ class IDEC(object):
                     break
 
             # train on batch
-            if (index + 1) * self.batch_size > x.shape[0]:h_size:(index + 1) * self.batch_size]])
-                index += 1
-
-            # save intermediate model
+            if (index + 1) * self.batch_size > x.shape[0]:
                 loss = self.model.train_on_batch(x=x[index * self.batch_size::],
                                                  y=[p[index * self.batch_size::], x[index * self.batch_size::]])
                 index = 0
             else:
-                loss = self.model.train_on_batch(x=x[index * self.batch_size:(index + 1) * self.batch_size],
-                                                 y=[p[index * self.batch_size:(index + 1) * self.batch_size],
-                                                    x[index * self.batc
+                loss = self.model.train_on_batch(
+                    x=x[index * self.batch_size:(index + 1) * self.batch_size],
+                    y=[
+                        p[index * self.batch_size:(index + 1) * self.batch_size],
+                        x[index * self.batch_size:(index + 1) * self.batch_size]
+                    ]
+                )
+                index += 1
+
             if ite % save_interval == 0:
                 # save IDEC model checkpoints
                 print('saving model to:', save_dir + '/IDEC_model_' + str(ite) + '.h5')
