@@ -14,5 +14,5 @@
 /results/
 
 # ignore others
-*.h5
+!*.h5
 *.pyc
