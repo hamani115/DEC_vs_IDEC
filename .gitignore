@@ -8,7 +8,7 @@
 !/data/reuters/get_data.sh
 
 # weights file
-/ae_weights/
+!/ae_weights/
 
 # ignore the results of running code 'results/'
 /results/
