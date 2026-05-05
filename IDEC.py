@@ -17,9 +17,9 @@ Author:
 
 from time import time
 import numpy as np
-from keras.models import Model
-from keras.optimizers import SGD
-from keras.utils.vis_utils import plot_model
+from tensorflow.keras.models import Model
+from tensorflow.keras.optimizers import SGD
+from tensorflow.keras.utils.vis_utils import plot_model
 
 from sklearn.cluster import KMeans
 from sklearn import metrics
@@ -48,10 +48,10 @@ class IDEC(object):
     def initialize_model(self, ae_weights=None, gamma=0.1, optimizer='adam'):
         if ae_weights is not None:
             self.autoencoder.load_weights(ae_weights)
-            print 'Pretrained AE weights are loaded successfully.'
+            print('Pretrained AE weights are loaded successfully.')
         else:
-            print 'ae_weights must be given. E.g.'
-            print '    python IDEC.py mnist --ae_weights weights.h5'
+            print('ae_weights must be given. E.g.')
+            print('    python IDEC.py mnist --ae_weights weights.h5')
             exit()
 
         hidden = self.autoencoder.get_layer(name='encoder_%d' % (self.n_stacks - 1)).output
@@ -87,12 +87,12 @@ class IDEC(object):
                    maxiter=2e4,
                    save_dir='./results/idec'):
 
-        print 'Update interval', update_interval
+        print('Update interval', update_interval)
         save_interval = x.shape[0] / self.batch_size * 5  # 5 epochs
-        print 'Save interval', save_interval
+        print('Save interval', save_interval)
 
         # initialize cluster centers using k-means
-        print 'Initializing cluster centers with k-means.'
+        print('Initializing cluster centers with k-means.')
         kmeans = KMeans(n_clusters=self.n_clusters, n_init=20)
         y_pred = kmeans.fit_predict(self.encoder.predict(x))
         y_pred_last = y_pred
@@ -102,7 +102,8 @@ class IDEC(object):
         import csv, os
         if not os.path.exists(save_dir):
             os.makedirs(save_dir)
-        logfile = file(save_dir + '/idec_log.csv', 'wb')
+        # logfile = file(save_dir + '/idec_log.csv', 'wb')
+        logfile = open(save_dir + '/idec_log.csv', 'w', newline='')
         logwriter = csv.DictWriter(logfile, fieldnames=['iter', 'acc', 'nmi', 'ari', 'L', 'Lc', 'Lr'])
         logwriter.writeheader()
 
@@ -124,38 +125,40 @@ class IDEC(object):
                     loss = np.round(loss, 5)
                     logdict = dict(iter=ite, acc=acc, nmi=nmi, ari=ari, L=loss[0], Lc=loss[1], Lr=loss[2])
                     logwriter.writerow(logdict)
-                    print 'Iter', ite, ': Acc', acc, ', nmi', nmi, ', ari', ari, '; loss=', loss
+                    print('Iter', ite, ': Acc', acc, ', nmi', nmi, ', ari', ari, '; loss=', loss)
 
                 # check stop criterion
                 if ite > 0 and delta_label < tol:
-                    print 'delta_label ', delta_label, '< tol ', tol
-                    print 'Reached tolerance threshold. Stopping training.'
+                    print('delta_label ', delta_label, '< tol ', tol)
+                    print('Reached tolerance threshold. Stopping training.')
                     logfile.close()
                     break
 
             # train on batch
-            if (index + 1) * self.batch_size > x.shape[0]:
+            if (index + 1) * self.batch_size > x.shape[0]:h_size:(index + 1) * self.batch_size]])
+                index += 1
+
+            # save intermediate model
                 loss = self.model.train_on_batch(x=x[index * self.batch_size::],
                                                  y=[p[index * self.batch_size::], x[index * self.batch_size::]])
                 index = 0
             else:
                 loss = self.model.train_on_batch(x=x[index * self.batch_size:(index + 1) * self.batch_size],
                                                  y=[p[index * self.batch_size:(index + 1) * self.batch_size],
-                                                    x[index * self.batch_size:(index + 1) * self.batch_size]])
-                index += 1
-
-            # save intermediate model
+                                                    x[index * self.batc
             if ite % save_interval == 0:
                 # save IDEC model checkpoints
-                print 'saving model to:', save_dir + '/IDEC_model_' + str(ite) + '.h5'
-                self.model.save_weights(save_dir + '/IDEC_model_' + str(ite) + '.h5')
+                print('saving model to:', save_dir + '/IDEC_model_' + str(ite) + '.h5')
+                # self.model.save_weights(save_dir + '/IDEC_model_' + str(ite) + '.h5')
+                self.model.save_weights(save_dir + '/IDEC_model_' + str(ite) + '.weights.h5')
 
             ite += 1
 
         # save the trained model
         logfile.close()
-        print 'saving model to:', save_dir + '/IDEC_model_final.h5'
-        self.model.save_weights(save_dir + '/IDEC_model_final.h5')
+        print('saving model to:', save_dir + '/IDEC_model_final.h5')
+        # self.model.save_weights(save_dir + '/IDEC_model_final.h5')
+        self.model.save_weights(save_dir + '/IDEC_model_final.weights.h5')
         
         return y_pred
 
@@ -177,14 +180,17 @@ if __name__ == "__main__":
     parser.add_argument('--ae_weights', default=None, help='This argument must be given')
     parser.add_argument('--save_dir', default='results/idec')
     args = parser.parse_args()
-    print args
+    print(args)
 
     # load dataset
-    optimizer = SGD(lr=0.1, momentum=0.99)
-    from datasets import load_mnist, load_reuters, load_usps
+    # optimizer = SGD(lr=0.1, momentum=0.99)
+    optimizer = SGD(learning_rate=0.1, momentum=0.99)
+    from datasets import load_mnist, load_reuters, load_usps, load_cifar10
 
     if args.dataset == 'mnist':  # recommends: n_clusters=10, update_interval=140
         x, y = load_mnist()
+    elif args.dataset == 'cifar10': # recommends: n_clusters=10
+        x, y = load_cifar10()
         optimizer = 'adam'
     elif args.dataset == 'usps':  # recommends: n_clusters=10, update_interval=30
         x, y = load_usps('data/usps')
@@ -201,5 +207,5 @@ if __name__ == "__main__":
     t0 = time()
     y_pred = idec.clustering(x, y=y, tol=args.tol, maxiter=args.maxiter,
                              update_interval=args.update_interval, save_dir=args.save_dir)
-    print 'acc:', cluster_acc(y, y_pred)
-    print 'clustering time: ', (time() - t0)
+    print('acc:', cluster_acc(y, y_pred))
+    print('clustering time: ', (time() - t0))

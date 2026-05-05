@@ -16,37 +16,51 @@ Author:
 
 from time import time
 import numpy as np
-import keras.backend as K
-from keras.engine.topology import Layer, InputSpec
-from keras.layers import Dense, Input
-from keras.models import Model
-from keras.optimizers import SGD
-from keras.utils.vis_utils import plot_model
+import tensorflow.keras.backend as K
+from tensorflow.keras.layers import Layer, InputSpec
+from tensorflow.keras.layers import Dense, Input
+from tensorflow.keras.models import Model
+from tensorflow.keras.optimizers import SGD
+from tensorflow.keras.utils import plot_model
 
 from sklearn.cluster import KMeans
 from sklearn import metrics
 
-
 def cluster_acc(y_true, y_pred):
-    """
-    Calculate clustering accuracy. Require scikit-learn installed
+    from scipy.optimize import linear_sum_assignment
 
-    # Arguments
-        y: true labels, numpy.array with shape `(n_samples,)`
-        y_pred: predicted labels, numpy.array with shape `(n_samples,)`
-
-    # Return
-        accuracy, in [0,1]
-    """
     y_true = y_true.astype(np.int64)
     assert y_pred.size == y_true.size
-    D = max(y_pred.max(), y_true.max()) + 1
+
+    D = int(max(y_pred.max(), y_true.max()) + 1)
     w = np.zeros((D, D), dtype=np.int64)
+
     for i in range(y_pred.size):
         w[y_pred[i], y_true[i]] += 1
-    from sklearn.utils.linear_assignment_ import linear_assignment
-    ind = linear_assignment(w.max() - w)
-    return sum([w[i, j] for i, j in ind]) * 1.0 / y_pred.size
+
+    row_ind, col_ind = linear_sum_assignment(w.max() - w)
+    return w[row_ind, col_ind].sum() * 1.0 / y_pred.size
+
+# def cluster_acc(y_true, y_pred):
+#     ""
+#     Calculate clustering accuracy. Require scikit-learn installed
+
+#     # Arguments
+#         y: true labels, numpy.array with shape `(n_samples,)`
+#         y_pred: predicted labels, numpy.array with shape `(n_samples,)`
+
+#     # Return
+#         accuracy, in [0,1]
+#     """
+#     y_true = y_true.astype(np.int64)
+#     assert y_pred.size == y_true.size
+#     D = max(y_pred.max(), y_true.max()) + 1
+#     w = np.zeros((D, D), dtype=np.int64)
+#     for i in range(y_pred.size):
+#         w[y_pred[i], y_true[i]] += 1
+#     from sklearn.utils.linear_assignment_ import linear_assignment
+#     ind = linear_assignment(w.max() - w)
+#     return sum([w[i, j] for i, j in ind]) * 1.0 / y_pred.size
 
 
 def autoencoder(dims, act='relu'):
@@ -164,8 +178,8 @@ class DEC(object):
         if ae_weights is not None:  # load pretrained weights of autoencoder
             self.autoencoder.load_weights(ae_weights)
         else:
-            print 'ae_weights must be given. E.g.'
-            print 'python DEC.py mnist --ae_weights weights.h5'
+            print('ae_weights must be given. E.g.')
+            print('python DEC.py mnist --ae_weights weights.h5')
             exit()
 
         hidden = self.autoencoder.get_layer(name='encoder_%d' % (self.n_stacks - 1)).output
@@ -198,12 +212,12 @@ class DEC(object):
                    maxiter=2e4,
                    save_dir='./results/dec'):
 
-        print 'Update interval', update_interval
+        print('Update interval', update_interval)
         save_interval = x.shape[0] / self.batch_size * 5  # 5 epochs
-        print 'Save interval', save_interval
+        print('Save interval', save_interval)
 
         # initialize cluster centers using k-means
-        print 'Initializing cluster centers with k-means.'
+        print('Initializing cluster centers with k-means.')
         kmeans = KMeans(n_clusters=self.n_clusters, n_init=20)
         y_pred = kmeans.fit_predict(self.encoder.predict(x))
         y_pred_last = y_pred
@@ -214,7 +228,7 @@ class DEC(object):
         if not os.path.exists(save_dir):
             os.makedirs(save_dir)
 
-        logfile = file(save_dir + '/dec_log.csv', 'wb')
+        logfile = open(save_dir + '/dec_log.csv', 'w', newline='')
         logwriter = csv.DictWriter(logfile, fieldnames=['iter', 'acc', 'nmi', 'ari', 'L'])
         logwriter.writeheader()
 
@@ -236,12 +250,12 @@ class DEC(object):
                     loss = np.round(loss, 5)
                     logdict = dict(iter=ite, acc=acc, nmi=nmi, ari=ari, L=loss)
                     logwriter.writerow(logdict)
-                    print 'Iter', ite, ': Acc', acc, ', nmi', nmi, ', ari', ari, '; loss=', loss
+                    print('Iter', ite, ': Acc', acc, ', nmi', nmi, ', ari', ari, '; loss=', loss)
 
                 # check stop criterion
                 if ite > 0 and delta_label < tol:
-                    print 'delta_label ', delta_label, '< tol ', tol
-                    print 'Reached tolerance threshold. Stopping training.'
+                    print('delta_label ', delta_label, '< tol ', tol)
+                    print('Reached tolerance threshold. Stopping training.')
                     logfile.close()
                     break
 
@@ -258,15 +272,17 @@ class DEC(object):
             # save intermediate model
             if ite % save_interval == 0:
                 # save IDEC model checkpoints
-                print 'saving model to:', save_dir + '/DEC_model_' + str(ite) + '.h5'
-                self.model.save_weights(save_dir + '/DEC_model_' + str(ite) + '.h5')
+                print('saving model to:', save_dir + '/DEC_model_' + str(ite) + '.h5')
+                # self.model.save_weights(save_dir + '/DEC_model_' + str(ite) + '.h5')
+                self.model.save_weights(save_dir + '/DEC_model_' + str(ite) + '.weights.h5')
 
             ite += 1
 
         # save the trained model
         logfile.close()
-        print 'saving model to:', save_dir + '/DEC_model_final.h5'
-        self.model.save_weights(save_dir + '/DEC_model_final.h5')
+        print('saving model to:', save_dir + '/DEC_model_final.h5')
+        # self.model.save_weights(save_dir + '/DEC_model_final.h5')
+        self.model.save_weights(save_dir + '/DEC_model_final.weights.h5')
 
         return y_pred
 
@@ -277,7 +293,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='train',
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('dataset', default='mnist', choices=['mnist', 'usps', 'reutersidf10k'])
+    parser.add_argument('dataset', default='mnist', choices=['mnist', 'usps', 'reutersidf10k', 'cifar10'])
     parser.add_argument('--n_clusters', default=10, type=int)
     parser.add_argument('--batch_size', default=256, type=int)
     parser.add_argument('--maxiter', default=2e4, type=int)
@@ -288,12 +304,14 @@ if __name__ == "__main__":
     parser.add_argument('--ae_weights', default=None, help='This argument must be given')
     parser.add_argument('--save_dir', default='results/dec')
     args = parser.parse_args()
-    print args
+    print(args)
 
     # load dataset
-    from datasets import load_mnist, load_reuters, load_usps
+    from datasets import load_mnist, load_reuters, load_usps, load_cifar10
     if args.dataset == 'mnist':  # recommends: n_clusters=10, update_interval=140
         x, y = load_mnist()
+    elif args.dataset == 'cifar10': # recommends: n_clusters=10
+        x, y = load_cifar10()
     elif args.dataset == 'usps':  # recommends: n_clusters=10, update_interval=30
         x, y = load_usps('data/usps')
     elif args.dataset == 'reutersidf10k':  # recommends: n_clusters=4, update_interval=20
@@ -302,12 +320,14 @@ if __name__ == "__main__":
     # prepare the DEC model
     dec = DEC(dims=[x.shape[-1], 500, 500, 2000, 10], n_clusters=args.n_clusters, batch_size=args.batch_size)
 
-    dec.initialize_model(optimizer=SGD(lr=0.01, momentum=0.9),
-                         ae_weights=args.ae_weights)
+    dec.initialize_model(
+        optimizer=SGD(learning_rate=0.01, momentum=0.9),
+        ae_weights=args.ae_weights
+    )
     plot_model(dec.model, to_file='dec_model.png', show_shapes=True)
     dec.model.summary()
     t0 = time()
     y_pred = dec.clustering(x, y=y, tol=args.tol, maxiter=args.maxiter,
                             update_interval=args.update_interval, save_dir=args.save_dir)
-    print 'acc:', cluster_acc(y, y_pred)
-    print 'clustering time: ', (time() - t0)
+    print('acc:', cluster_acc(y, y_pred))
+    print('clustering time: ', (time() - t0))
