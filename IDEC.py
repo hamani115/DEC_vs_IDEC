@@ -187,7 +187,7 @@ if __name__ == "__main__":
 
     # load dataset
     # optimizer = SGD(lr=0.1, momentum=0.99)
-    optimizer = SGD(learning_rate=0.1, momentum=0.99)
+    optimizer = SGD(learning_rate=0.01, momentum=0.99)
     from datasets import load_mnist, load_reuters, load_usps, load_cifar10
 
     if args.dataset == 'mnist':  # recommends: n_clusters=10, update_interval=140
