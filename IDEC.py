@@ -194,7 +194,7 @@ if __name__ == "__main__":
         x, y = load_mnist()
     elif args.dataset == 'cifar10': # recommends: n_clusters=10
         x, y = load_cifar10()
-        # optimizer = 'adam'
+        optimizer = 'adam'
     elif args.dataset == 'usps':  # recommends: n_clusters=10, update_interval=30
         x, y = load_usps('data/usps')
     elif args.dataset == 'reutersidf10k':  # recommends: n_clusters=4, update_interval=3
